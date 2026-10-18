@@ -19,18 +19,38 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { listings, categoriesDisabled } = useStore();
   const now = useNow();
-  const [q, setQ] = useState(""); const [cat, setCat] = useState(""); const [status, setStatus] = useState("all");
+  const [q, setQ] = useState(""); const [submittedQ, setSubmittedQ] = useState(""); const [cat, setCat] = useState(""); const [status, setStatus] = useState("all");
   const [loc, setLoc] = useState(""); const [max, setMax] = useState(""); const [sort, setSort] = useState("ending");
+  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = q.trim();
+    setSubmittedQ(query);
+    const priceMatch = query.match(/(?:under|below|less than|max(?:imum)?|up to)\s*(?:etb|birr)?\s*([\d,]+)/i);
+    if (priceMatch) setMax(priceMatch[1].replace(/,/g, ""));
+    const locationMatch = LOCATIONS.find((location) => query.toLowerCase().includes(location.toLowerCase()));
+    if (locationMatch) setLoc(locationMatch);
+    const categoryMatch = CATEGORIES.find((category) => query.toLowerCase().includes(category.toLowerCase()));
+    if (categoryMatch && !categoriesDisabled.includes(categoryMatch)) setCat(categoryMatch);
+    if (/\b(live|active|open)\b/i.test(query)) setStatus("live");
+    else if (/\b(upcoming|scheduled)\b/i.test(query)) setStatus("scheduled");
+    else if (/\b(ended|closed)\b/i.test(query)) setStatus("ended");
+  };
   const items = useMemo(() => {
     const t = now ?? Date.now();
     return listings
       .filter((l) => l.moderation === "approved" && !categoriesDisabled.includes(l.category))
-      .filter((l) => !q || (l.title + l.description).toLowerCase().includes(q.toLowerCase()))
+      .filter((l) => {
+        const query = submittedQ.toLowerCase().replace(/(?:under|below|less than|max(?:imum)?|up to)\s*(?:etb|birr)?\s*[\d,]+/i, "").replace(/\b(live|active|open|upcoming|scheduled|ended|closed)\b/gi, "").trim();
+        if (!query) return true;
+        const searchable = `${l.title} ${l.description} ${l.category} ${l.location}`.toLowerCase();
+        const terms = query.split(/\s+/).filter((term) => term.length > 1 && !["in", "the", "for", "and", "with", "birr", "etb"].includes(term));
+        return terms.every((term) => searchable.includes(term));
+      })
       .filter((l) => !cat || l.category === cat).filter((l) => !loc || l.location === loc)
       .filter((l) => status === "all" || (status === "soon" ? statusOf(l, t) === "live" && l.endsAt - t < 6 * 3_600_000 : statusOf(l, t) === status))
       .filter((l) => !max || currentPrice(l, t) <= Number(max))
       .sort((a, b) => sort === "ending" ? a.endsAt - b.endsAt : sort === "low" ? currentPrice(a, t) - currentPrice(b, t) : sort === "high" ? currentPrice(b, t) - currentPrice(a, t) : b.bids.length - a.bids.length);
-  }, [listings, q, cat, status, loc, max, sort, now, categoriesDisabled]);
+  }, [listings, submittedQ, cat, status, loc, max, sort, now, categoriesDisabled]);
 
   return (
     <div>
@@ -45,10 +65,15 @@ function Index() {
             <Link to="/account" hash="#signup" className="inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-5 font-semibold text-emerald-950 transition hover:bg-white/90">Sign Up</Link>
           </div>
         </div>
-        <label className="relative mt-5 block max-w-xl">
-          <Search className="absolute left-3 top-3.5 size-5 text-muted-foreground" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search coffee, Hilux, teff…" className="input min-h-12 pl-10 text-foreground" />
-        </label>
+        <form onSubmit={submitSearch} className="mt-5 flex max-w-2xl flex-col gap-2 sm:flex-row">
+          <label className="relative block min-w-0 flex-1">
+            <Search className="absolute left-3 top-3.5 size-5 text-muted-foreground" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Try: Hilux in Addis Ababa under 500,000 ETB" aria-label="Search auctions by item, location, price or status" className="input min-h-12 pl-10 text-foreground" />
+          </label>
+          <button type="submit" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-5 font-semibold text-emerald-950 transition hover:bg-white/90">
+            <Search className="size-4" /> Search
+          </button>
+        </form>
       </section>
       <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
         <button onClick={() => setCat("")} className={`chip ${!cat ? "chip-active" : ""}`}>All</button>
