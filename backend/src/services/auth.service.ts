@@ -16,7 +16,7 @@ function issueAccessToken(user: { id: string; role: UserRole }) {
 }
 
 export async function registerUser(input: {
-  fullName: string; phone: string; email?: string; password: string; preferredLanguage: string;
+  fullName: string; phone: string; email?: string; password: string; preferredLanguage: string; role: "BUYER" | "SELLER";
 }, context: { ip?: string; userAgent?: string }) {
   const existing = await prisma.user.findFirst({
     where: { OR: [{ phone: input.phone }, ...(input.email ? [{ email: input.email }] : [])] },
@@ -31,7 +31,7 @@ export async function registerUser(input: {
       email: input.email ?? null,
       passwordHash,
       preferredLanguage: input.preferredLanguage,
-      role: UserRole.BUYER,
+      role: input.role === "SELLER" ? UserRole.SELLER : UserRole.BUYER,
       status: UserStatus.PENDING_VERIFICATION,
     },
     select: { id: true, fullName: true, phone: true, email: true, role: true, status: true, preferredLanguage: true, createdAt: true },
