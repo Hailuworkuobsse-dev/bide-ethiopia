@@ -5,13 +5,18 @@ import { createAuctionSchema, listAuctionsSchema, bidSchema } from "../schemas/a
 import { createAuction, getAuction, listAuctions, placeBid } from "../services/auction.service.js";
 import { HttpError } from "../utils/http-error.js";
 
+function routeParam(req: Request, name: string): string {
+  const value = req.params[name];
+  return Array.isArray(value) ? value[0]! : value!;
+}
+
 export async function list(req: Request, res: Response) {
   const query = listAuctionsSchema.parse(req.query);
   const result = await listAuctions({ ...query, status: query.status as AuctionStatus | undefined });
   res.json({ data: result.items, pagination: result.pagination });
 }
 export async function detail(req: Request, res: Response) {
-  res.json({ data: await getAuction(req.params.id!) });
+  res.json({ data: await getAuction(routeParam(req, "id")) });
 }
 export async function create(req: Request, res: Response) {
   const input = createAuctionSchema.parse(req.body);
@@ -20,7 +25,7 @@ export async function create(req: Request, res: Response) {
 }
 export async function bid(req: Request, res: Response) {
   const { amount } = bidSchema.parse(req.body);
-  const result = await placeBid(req.params.id!, req.auth!.userId, amount, { ip: req.ip, userAgent: req.get("user-agent") });
+  const result = await placeBid(routeParam(req, "id"), req.auth!.userId, amount, { ip: req.ip, userAgent: req.get("user-agent") });
   res.status(201).json({ data: result });
 }
 export async function myListings(req: Request, res: Response) {
