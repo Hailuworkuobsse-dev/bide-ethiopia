@@ -121,13 +121,14 @@ function useStoreValue() {
 
   const placeBid = useCallback(
     (listingId: string, amount: number): { ok: boolean; reason?: string } => {
+      if (!authUser) return { ok: false, reason: "Sign in or create a buyer account before bidding." };
       const st = ref.current;
       const l = st.listings.find((x) => x.id === listingId);
       if (!l) return { ok: false, reason: "Listing not found." };
       const held = st.deposits.some((d) => d.listingId === listingId && d.status === "held");
       const bal = st.tokenTx.reduce((a, t) => a + t.delta, 0);
 
-      const v = validateBid(l, amount, ME, Date.now(), { tokens: bal, depositHeld: held });
+      const v = validateBid(l, amount, authUser.id, Date.now(), { tokens: bal, depositHeld: held });
       if (!v.ok) return v;
 
       // If backend is connected, also dispatch to MySQL API asynchronously
@@ -206,6 +207,7 @@ function useStoreValue() {
 
   const addListing = useCallback(
     (l: Listing) => {
+      if (!authUser || (authUser.role !== "SELLER" && authUser.role !== "ADMIN")) return;
       // Sync to MySQL Backend if connected
       if (backendConnected) {
         api.createAuction({
