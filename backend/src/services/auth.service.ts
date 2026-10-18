@@ -6,29 +6,55 @@ import { env } from "../config/env.js";
 import { HttpError } from "../utils/http-error.js";
 import { recordAudit } from "./audit.service.js";
 
-
-async function sendRegistrationConfirmationSms(phone: string, fullName: string): Promise<boolean> {
-  if (!env.SMS_API_URL || !env.SMS_API_TOKEN) {
-    console.warn("SMS gateway is not configured; registration confirmation SMS was skipped.");
+async function sendRegistrationConfirmationWhatsApp(phone: string, fullName: string): Promise<boolean> {
+  if (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) {
+    console.warn("WhatsApp Cloud API is not configured; registration confirmation was skipped.");
     return false;
   }
+
+  // Meta expects the recipient number in international digits-only format, e.g. 2519XXXXXXXX.
+  const recipient = phone.replace(/\\D/g, "");
+  if (!recipient) {
+    console.warn("WhatsApp confirmation skipped because the recipient phone number is invalid.");
+    return false;
+  }
+
   try {
-    const response = await fetch(env.SMS_API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + env.SMS_API_TOKEN },
-      body: JSON.stringify({
-        to: phone,
-        message: "Hello " + fullName + ", your BidEthiopia registration is complete. Your account is pending verification. You can now sign in.",
-        ...(env.SMS_SENDER_ID ? { senderId: env.SMS_SENDER_ID } : {}),
-      }),
-    });
+    const response = await fetch(
+      `https://graph.facebook.com/${env.WHATSAPP_API_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: recipient,
+          type: "template",
+          template: {
+            name: env.WHATSAPP_REGISTRATION_TEMPLATE,
+            language: { code: env.WHATSAPP_TEMPLATE_LANGUAGE },
+            components: [
+              {
+                type: "body",
+                parameters: [{ type: "text", text: fullName }],
+              },
+            ],
+          },
+        }),
+      },
+    );
+
     if (!response.ok) {
-      console.error("SMS gateway returned HTTP " + response.status);
+      const detail = await response.text().catch(() => "");
+      console.error("WhatsApp Cloud API returned HTTP " + response.status + (detail ? ": " + detail.slice(0, 500) : ""));
       return false;
     }
     return true;
   } catch (error) {
-    console.error("Registration SMS request failed:", error instanceof Error ? error.message : "unknown error");
+    console.error("Registration WhatsApp request failed:", error instanceof Error ? error.message : "unknown error");
     return false;
   }
 }
@@ -64,8 +90,9 @@ export async function registerUser(input: {
     select: { id: true, fullName: true, phone: true, email: true, role: true, status: true, preferredLanguage: true, createdAt: true },
   });
   await recordAudit({ actorId: user.id, action: "AUTH_REGISTER", entityType: "User", entityId: user.id, ipAddress: context.ip, userAgent: context.userAgent });
-  const smsSent = await sendRegistrationConfirmationSms(user.phone, user.fullName);
-  return { user, accessToken: issueAccessToken(user), smsSent };
+  const whatsappSent = await sendRegistrationConfirmationWhatsApp(user.phone, user.fullName);
+  // Keep smsSent as a temporary response alias so existing frontend builds remain compatible.
+  return { user, accessToken: issueAccessToken(user), whatsappSent, smsSent: whatsappSent };
 }
 
 export async function loginUser(input: { phone: string; password: string }, context: { ip?: string; userAgent?: string }) {
