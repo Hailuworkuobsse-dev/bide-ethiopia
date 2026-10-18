@@ -108,8 +108,8 @@ function useStoreValue() {
 
   const register = useCallback(async (data: { fullName: string; phone: string; password: string; email?: string; role?: "BUYER" | "SELLER" }) => {
     const res = await api.register(data);
-    setAuthUser(res.user);
-    return res.user;
+    // Registration does not create a signed-in session; users sign in after registration.
+    return res;
   }, []);
 
   const logout = useCallback(() => {
