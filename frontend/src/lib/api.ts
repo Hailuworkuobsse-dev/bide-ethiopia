@@ -163,13 +163,12 @@ export const api = {
     email?: string;
     preferredLanguage?: string;
     role?: "BUYER" | "SELLER";
-  }): Promise<{ user: BackendUser; accessToken: string }> {
-    const res = await request<{ data: { user: BackendUser; accessToken: string } }>("/auth/register", {
+  }): Promise<{ user: BackendUser; accessToken: string; smsSent: boolean }> {
+    const res = await request<{ data: { user: BackendUser; accessToken: string; smsSent: boolean } }>("/auth/register", {
       method: "POST",
       body: JSON.stringify(data),
     });
-    setStoredToken(res.data.accessToken);
-    setStoredUser(res.data.user);
+    // Do not store the token or user: registration must return to the sign-in flow.
     return res.data;
   },
 
