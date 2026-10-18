@@ -1,0 +1,33 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: mysql://ci:ci@127.0.0.1:3306/bide_ethiopia
+      JWT_ACCESS_SECRET: ci_only_secret_replace_this_with_a_long_random_value
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package.json
+      - run: npm install
+      - run: npx prisma validate
+      - run: npm run prisma:generate
+      - run: npm run typecheck
+      - run: npm run build
