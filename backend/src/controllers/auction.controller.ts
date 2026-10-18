@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { AuctionStatus } from "@prisma/client";
+import { AuctionStatus } from "@prisma/client";\nimport { prisma } from "../config/prisma.js";
 import { createAuctionSchema, listAuctionsSchema, bidSchema } from "../schemas/auction.schema.js";
 import { createAuction, getAuction, listAuctions, placeBid } from "../services/auction.service.js";
 import { HttpError } from "../utils/http-error.js";
@@ -23,6 +23,11 @@ export async function bid(req: Request, res: Response) {
   res.status(201).json({ data: result });
 }
 export async function myListings(req: Request, res: Response) {
-  const result = await listAuctions({ page: 1, limit: 50, status: undefined });
-  res.json({ data: result.items.filter((item) => item.seller.id === req.auth!.userId), pagination: result.pagination });
+  const items = await prisma.auction.findMany({
+    where: { sellerId: req.auth!.userId },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+    select: { id: true, title: true, category: true, region: true, city: true, status: true, type: true, currency: true, startingPrice: true, currentPrice: true, startsAt: true, endsAt: true, createdAt: true },
+  });
+  res.json({ data: items });
 }
