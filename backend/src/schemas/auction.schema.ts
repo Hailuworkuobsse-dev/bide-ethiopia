@@ -21,7 +21,7 @@ export const listAuctionsSchema = z.object({
   q: z.string().trim().max(100).optional(),
   category: z.string().trim().max(60).optional(),
   region: z.string().trim().max(80).optional(),
-  status: z.enum(["DRAFT", "SCHEDULED", "LIVE", "ENDED", "CANCELLED"]).optional(),
+  status: z.enum(["SCHEDULED", "LIVE", "ENDED"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
