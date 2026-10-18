@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { useStore, useNow } from "@/lib/store";
@@ -35,8 +35,16 @@ function Index() {
   return (
     <div>
       <section className="hero-bg mb-6 rounded-2xl p-6 text-primary-foreground md:p-10">
-        <h1 className="text-3xl font-semibold md:text-5xl">Buy and sell at fair prices.</h1>
-        <p className="mt-2 max-w-xl opacity-90">Free to browse. Transparent bidding in Birr. No login needed to look.</p>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold md:text-5xl">Buy and sell at fair prices.</h1>
+            <p className="mt-2 max-w-xl opacity-90">Free to browse. Transparent bidding in Birr. Sign in or create an account to get started.</p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Link to="/account" hash="#signin" className="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/70 px-5 font-semibold text-primary-foreground transition hover:bg-white/10">Sign In</Link>
+            <Link to="/account" hash="#signup" className="inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-5 font-semibold text-emerald-950 transition hover:bg-white/90">Sign Up</Link>
+          </div>
+        </div>
         <label className="relative mt-5 block max-w-xl">
           <Search className="absolute left-3 top-3.5 size-5 text-muted-foreground" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search coffee, Hilux, teff…" className="input min-h-12 pl-10 text-foreground" />
