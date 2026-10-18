@@ -5,6 +5,11 @@ import { AuctionStatus, UserStatus, UserRole } from "@prisma/client";
 import { HttpError } from "../utils/http-error.js";
 import { recordAudit } from "../services/audit.service.js";
 
+function routeParam(req: Request, name: string): string {
+  const value = req.params[name];
+  return Array.isArray(value) ? value[0]! : value!;
+}
+
 const statusSchema = z.object({ status: z.enum(["ACTIVE", "SUSPENDED", "PENDING_VERIFICATION"]) });
 const auctionStatusSchema = z.object({ status: z.enum(["LIVE", "CANCELLED", "ENDED"]) });
 const userRoleSchema = z.object({ role: z.enum(["BUYER", "SELLER"]) });
@@ -20,7 +25,7 @@ export async function auditEvents(req: Request, res: Response) {
 }
 export async function updateUserStatus(req: Request, res: Response) {
   const { status } = statusSchema.parse(req.body);
-  const userId = req.params.id!;
+  const userId = routeParam(req, "id");
   if (userId === req.auth!.userId) throw new HttpError(400, "Administrators cannot change their own status", "SELF_STATUS_CHANGE");
   const user = await prisma.user.update({ where: { id: userId }, data: { status: status as UserStatus }, select: { id: true, fullName: true, phone: true, role: true, status: true } });
   await recordAudit({ actorId: req.auth!.userId, action: "USER_STATUS_UPDATED", entityType: "User", entityId: userId, ipAddress: req.ip, userAgent: req.get("user-agent"), metadata: { status } });
@@ -28,7 +33,7 @@ export async function updateUserStatus(req: Request, res: Response) {
 }
 export async function updateAuctionStatus(req: Request, res: Response) {
   const { status } = auctionStatusSchema.parse(req.body);
-  const auction = await prisma.auction.findUnique({ where: { id: req.params.id! } });
+  const auction = await prisma.auction.findUnique({ where: { id: routeParam(req, "id") } });
   if (!auction) throw new HttpError(404, "Auction not found", "AUCTION_NOT_FOUND");
   if (status === "LIVE" && (auction.startsAt > new Date() || auction.endsAt <= new Date())) throw new HttpError(400, "Auction timing does not allow activation", "INVALID_AUCTION_TIMING");
   const updated = await prisma.auction.update({ where: { id: auction.id }, data: { status: status as AuctionStatus } });
@@ -38,7 +43,7 @@ export async function updateAuctionStatus(req: Request, res: Response) {
 
 export async function updateUserRole(req: Request, res: Response) {
   const { role } = userRoleSchema.parse(req.body);
-  const userId = req.params.id!;
+  const userId = routeParam(req, "id");
   if (userId === req.auth!.userId) throw new HttpError(400, "Administrators cannot change their own role", "SELF_ROLE_CHANGE");
   const user = await prisma.user.update({
     where: { id: userId },
