@@ -10,9 +10,11 @@ const schema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
   CORS_ORIGINS: z.string().default("http://localhost:5173"),
   BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(14).default(12),
-  SMS_API_URL: z.preprocess((value) => value === "" ? undefined : value, z.string().url().optional()),
-  SMS_API_TOKEN: z.string().optional(),
-  SMS_SENDER_ID: z.string().optional(),
+  WHATSAPP_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_API_VERSION: z.string().default("v23.0"),
+  WHATSAPP_REGISTRATION_TEMPLATE: z.string().default("registration_confirmation"),
+  WHATSAPP_TEMPLATE_LANGUAGE: z.string().default("en"),
 });
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) {
