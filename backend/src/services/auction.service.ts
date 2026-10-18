@@ -1,9 +1,15 @@
-import { AuctionStatus, AuctionType, Prisma, UserRole } from "@prisma/client";
+import { AuctionStatus, AuctionType, Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 import { HttpError } from "../utils/http-error.js";
 import { recordAudit } from "./audit.service.js";
 
 type ListFilters = { q?: string; category?: string; region?: string; status?: AuctionStatus; page: number; limit: number };
+
+async function synchronizeAuctionStatuses() {
+  const now = new Date();
+  await prisma.auction.updateMany({ where: { status: AuctionStatus.SCHEDULED, startsAt: { lte: now }, endsAt: { gt: now } }, data: { status: AuctionStatus.LIVE } });
+  await prisma.auction.updateMany({ where: { status: AuctionStatus.LIVE, endsAt: { lte: now } }, data: { status: AuctionStatus.ENDED } });
+}
 export async function listAuctions(filters: ListFilters) {
   const now = new Date();
   const where: Prisma.AuctionWhereInput = {
@@ -75,6 +81,7 @@ export async function placeBid(auctionId: string, bidderId: string, amount: numb
     if (auction.type === AuctionType.DESCENDING && (bidAmount.gte(auction.currentPrice) || bidAmount.lte(0))) {
       throw new HttpError(400, "For descending auctions, bid must be below the current price and above zero", "INVALID_DESCENDING_BID");
     }
+    await tx.bid.updateMany({ where: { auctionId, status: "WINNING" }, data: { status: "OUTBID" } });
     const bid = await tx.bid.create({ data: { auctionId, bidderId, amount: bidAmount, status: "WINNING" } });
     await tx.auction.update({ where: { id: auctionId }, data: { currentPrice: bidAmount } });
     return { bid, currentPrice: bidAmount };
