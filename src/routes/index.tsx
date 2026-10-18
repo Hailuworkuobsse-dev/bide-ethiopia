@@ -1,0 +1,66 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { Search } from "lucide-react";
+import { useStore, useNow } from "@/lib/store";
+import { CATEGORIES, LOCATIONS } from "@/lib/types";
+import { currentPrice, statusOf } from "@/lib/bidding";
+import { ListingCard } from "@/components/listing-card";
+
+export const Route = createFileRoute("/")({
+  head: () => ({ meta: [
+    { title: "BidEthiopia — Browse live auctions in Birr" },
+    { name: "description", content: "Free public auctions for vehicles, coffee, livestock, electronics and more across Ethiopia." },
+    { property: "og:title", content: "BidEthiopia — Live auctions" },
+    { property: "og:description", content: "Browse and bid on Ethiopian auctions in ETB." },
+  ] }),
+  component: Index,
+});
+
+function Index() {
+  const { listings, categoriesDisabled } = useStore();
+  const now = useNow();
+  const [q, setQ] = useState(""); const [cat, setCat] = useState(""); const [status, setStatus] = useState("all");
+  const [loc, setLoc] = useState(""); const [max, setMax] = useState(""); const [sort, setSort] = useState("ending");
+  const items = useMemo(() => {
+    const t = now ?? Date.now();
+    return listings
+      .filter((l) => l.moderation === "approved" && !categoriesDisabled.includes(l.category))
+      .filter((l) => !q || (l.title + l.description).toLowerCase().includes(q.toLowerCase()))
+      .filter((l) => !cat || l.category === cat).filter((l) => !loc || l.location === loc)
+      .filter((l) => status === "all" || (status === "soon" ? statusOf(l, t) === "live" && l.endsAt - t < 6 * 3_600_000 : statusOf(l, t) === status))
+      .filter((l) => !max || currentPrice(l, t) <= Number(max))
+      .sort((a, b) => sort === "ending" ? a.endsAt - b.endsAt : sort === "low" ? currentPrice(a, t) - currentPrice(b, t) : sort === "high" ? currentPrice(b, t) - currentPrice(a, t) : b.bids.length - a.bids.length);
+  }, [listings, q, cat, status, loc, max, sort, now, categoriesDisabled]);
+
+  return (
+    <div>
+      <section className="hero-bg mb-6 rounded-2xl p-6 text-primary-foreground md:p-10">
+        <h1 className="text-3xl font-semibold md:text-5xl">Buy and sell at fair prices.</h1>
+        <p className="mt-2 max-w-xl opacity-90">Free to browse. Transparent bidding in Birr. No login needed to look.</p>
+        <label className="relative mt-5 block max-w-xl">
+          <Search className="absolute left-3 top-3.5 size-5 text-muted-foreground" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search coffee, Hilux, teff…" className="input min-h-12 pl-10 text-foreground" />
+        </label>
+      </section>
+      <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        <button onClick={() => setCat("")} className={`chip ${!cat ? "chip-active" : ""}`}>All</button>
+        {CATEGORIES.filter((c) => !categoriesDisabled.includes(c)).map((c) => <button key={c} onClick={() => setCat(c)} className={`chip ${cat === c ? "chip-active" : ""}`}>{c}</button>)}
+      </div>
+      <div className="mb-6 grid grid-cols-2 gap-2 md:grid-cols-4">
+        <select className="input" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status">
+          <option value="all">All statuses</option><option value="live">Live</option><option value="soon">Ending soon</option><option value="scheduled">Upcoming</option><option value="ended">Ended</option>
+        </select>
+        <select className="input" value={loc} onChange={(e) => setLoc(e.target.value)} aria-label="Location"><option value="">All locations</option>{LOCATIONS.map((l) => <option key={l}>{l}</option>)}</select>
+        <input className="input" inputMode="numeric" placeholder="Max price (ETB)" value={max} onChange={(e) => setMax(e.target.value.replace(/\D/g, ""))} />
+        <select className="input" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort">
+          <option value="ending">Ending soonest</option><option value="low">Price: low → high</option><option value="high">Price: high → low</option><option value="bids">Most bids</option>
+        </select>
+      </div>
+      {items.length === 0 ? (
+        <div className="card p-10 text-center text-muted-foreground">No auctions match. Try clearing filters.</div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{items.map((l) => <ListingCard key={l.id} l={l} now={now} />)}</div>
+      )}
+    </div>
+  );
+}
