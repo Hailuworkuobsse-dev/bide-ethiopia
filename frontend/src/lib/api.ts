@@ -163,8 +163,8 @@ export const api = {
     email?: string;
     preferredLanguage?: string;
     role?: "BUYER" | "SELLER";
-  }): Promise<{ user: BackendUser; accessToken: string; smsSent: boolean }> {
-    const res = await request<{ data: { user: BackendUser; accessToken: string; smsSent: boolean } }>("/auth/register", {
+  }): Promise<{ user: BackendUser; emailSent: boolean }> {
+    const res = await request<{ data: { user: BackendUser; emailSent: boolean } }>("/auth/register", {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -172,7 +172,7 @@ export const api = {
     return res.data;
   },
 
-  async me(): Promise<{ userId: string; role: string }> {
+  async verifyEmail(token: string): Promise<{ verified: boolean }> {\n    const res = await request<{ data: { verified: boolean } }>("/auth/verify-email", { method: "POST", body: JSON.stringify({ token }) });\n    return res.data;\n  },\n\n  async me(): Promise<{ userId: string; role: string }> {
     const res = await request<{ data: { userId: string; role: string } }>("/auth/me");
     return res.data;
   },
