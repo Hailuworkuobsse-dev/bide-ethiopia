@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
-import { AuctionStatus } from "@prisma/client";\nimport { prisma } from "../config/prisma.js";
+import { AuctionStatus } from "@prisma/client";
+import { prisma } from "../config/prisma.js";
 import { createAuctionSchema, listAuctionsSchema, bidSchema } from "../schemas/auction.schema.js";
 import { createAuction, getAuction, listAuctions, placeBid } from "../services/auction.service.js";
 import { HttpError } from "../utils/http-error.js";
