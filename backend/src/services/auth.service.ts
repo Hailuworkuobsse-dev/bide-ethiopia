@@ -66,7 +66,7 @@ export async function registerUser(input: {
   return { user, emailSent };
 }
 
-export async function loginUser(input: { phone: string; password: string }, context: { ip?: string; userAgent?: string }) {
+export async function verifyUserEmail(_token: string) {\n  throw new HttpError(501, "Email-link verification is not enabled yet; registration confirmation is sent by email.", "EMAIL_LINK_VERIFICATION_DISABLED");\n}\n\nexport async function loginUser(input: { phone: string; password: string }, context: { ip?: string; userAgent?: string }) {
   const user = await prisma.user.findUnique({ where: { phone: input.phone } });
   const valid = user ? await bcrypt.compare(input.password, user.passwordHash) : false;
   if (!user || !valid) throw new HttpError(401, "Invalid phone number or password", "INVALID_CREDENTIALS");
