@@ -6,7 +6,8 @@ import { HttpError } from "../utils/http-error.js";
 import { recordAudit } from "../services/audit.service.js";
 
 const statusSchema = z.object({ status: z.enum(["ACTIVE", "SUSPENDED", "PENDING_VERIFICATION"]) });
-const auctionStatusSchema = z.object({ status: z.enum(["LIVE", "CANCELLED", "ENDED"]) });\nconst userRoleSchema = z.object({ role: z.enum(["BUYER", "SELLER"]) });
+const auctionStatusSchema = z.object({ status: z.enum(["LIVE", "CANCELLED", "ENDED"]) });
+const userRoleSchema = z.object({ role: z.enum(["BUYER", "SELLER"]) });
 
 export async function auditEvents(req: Request, res: Response) {
   const page = Math.max(1, Number(req.query.page) || 1);
