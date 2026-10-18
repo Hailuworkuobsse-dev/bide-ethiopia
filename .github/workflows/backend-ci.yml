@@ -13,11 +13,24 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: bide_ethiopia
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     defaults:
       run:
         working-directory: backend
     env:
-      DATABASE_URL: mysql://ci:ci@127.0.0.1:3306/bide_ethiopia
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/bide_ethiopia
       JWT_ACCESS_SECRET: ci_only_secret_replace_this_with_a_long_random_value
     steps:
       - uses: actions/checkout@v4
@@ -27,5 +40,6 @@ jobs:
       - run: npm install
       - run: npx prisma validate
       - run: npm run prisma:generate
+      - run: npm run prisma:migrate:deploy
       - run: npm run typecheck
       - run: npm run build
