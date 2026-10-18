@@ -9,7 +9,7 @@ export const authenticate: RequestHandler = (req, _res, next) => {
   const header = req.header("authorization");
   if (!header?.startsWith("Bearer ")) return next(new HttpError(401, "Authentication required", "UNAUTHENTICATED"));
   try {
-    const claims = jwt.verify(header.slice(7), env.JWT_ACCESS_SECRET) as AccessClaims;
+    const claims = jwt.verify(header.slice(7), env.JWT_ACCESS_SECRET, { issuer: "bide-ethiopia-api", audience: "bide-ethiopia-client" }) as AccessClaims;
     if (!claims.sub || !Object.values(UserRole).includes(claims.role) || claims.typ !== "access") {
       return next(new HttpError(401, "Invalid access token", "INVALID_TOKEN"));
     }
