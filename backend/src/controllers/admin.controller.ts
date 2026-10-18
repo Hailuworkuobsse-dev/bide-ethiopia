@@ -6,7 +6,7 @@ import { HttpError } from "../utils/http-error.js";
 import { recordAudit } from "../services/audit.service.js";
 
 const statusSchema = z.object({ status: z.enum(["ACTIVE", "SUSPENDED", "PENDING_VERIFICATION"]) });
-const auctionStatusSchema = z.object({ status: z.enum(["LIVE", "CANCELLED", "ENDED"]) });
+const auctionStatusSchema = z.object({ status: z.enum(["LIVE", "CANCELLED", "ENDED"]) });\nconst userRoleSchema = z.object({ role: z.enum(["BUYER", "SELLER"]) });
 
 export async function auditEvents(req: Request, res: Response) {
   const page = Math.max(1, Number(req.query.page) || 1);
@@ -33,4 +33,17 @@ export async function updateAuctionStatus(req: Request, res: Response) {
   const updated = await prisma.auction.update({ where: { id: auction.id }, data: { status: status as AuctionStatus } });
   await recordAudit({ actorId: req.auth!.userId, action: "AUCTION_STATUS_UPDATED", entityType: "Auction", entityId: auction.id, ipAddress: req.ip, userAgent: req.get("user-agent"), metadata: { status } });
   res.json({ data: updated });
+}
+
+export async function updateUserRole(req: Request, res: Response) {
+  const { role } = userRoleSchema.parse(req.body);
+  const userId = req.params.id!;
+  if (userId === req.auth!.userId) throw new HttpError(400, "Administrators cannot change their own role", "SELF_ROLE_CHANGE");
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { role: role as UserRole },
+    select: { id: true, fullName: true, phone: true, role: true, status: true },
+  });
+  await recordAudit({ actorId: req.auth!.userId, action: "USER_ROLE_UPDATED", entityType: "User", entityId: userId, ipAddress: req.ip, userAgent: req.get("user-agent"), metadata: { role } });
+  res.json({ data: user });
 }
