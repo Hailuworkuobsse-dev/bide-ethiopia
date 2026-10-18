@@ -25,25 +25,25 @@ function Index() {
     event.preventDefault();
     const query = q.trim();
     setSubmittedQ(query);
-    const priceMatch = query.match(/(?:under|below|less than|max(?:imum)?|up to)\\s*(?:etb|birr)?\\s*([\\d,]+)/i);
+    const priceMatch = query.match(/(?:under|below|less than|max(?:imum)?|up to)\s*(?:etb|birr)?\s*([\d,]+)/i);
     if (priceMatch) setMax(priceMatch[1].replace(/,/g, ""));
     const locationMatch = LOCATIONS.find((location) => query.toLowerCase().includes(location.toLowerCase()));
     if (locationMatch) setLoc(locationMatch);
     const categoryMatch = CATEGORIES.find((category) => query.toLowerCase().includes(category.toLowerCase()));
     if (categoryMatch && !categoriesDisabled.includes(categoryMatch)) setCat(categoryMatch);
-    if (/\\b(live|active|open)\\b/i.test(query)) setStatus("live");
-    else if (/\\b(upcoming|scheduled)\\b/i.test(query)) setStatus("scheduled");
-    else if (/\\b(ended|closed)\\b/i.test(query)) setStatus("ended");
+    if (/\b(live|active|open)\b/i.test(query)) setStatus("live");
+    else if (/\b(upcoming|scheduled)\b/i.test(query)) setStatus("scheduled");
+    else if (/\b(ended|closed)\b/i.test(query)) setStatus("ended");
   };
   const items = useMemo(() => {
     const t = now ?? Date.now();
     return listings
       .filter((l) => l.moderation === "approved" && !categoriesDisabled.includes(l.category))
       .filter((l) => {
-        const query = submittedQ.toLowerCase().replace(/(?:under|below|less than|max(?:imum)?|up to)\\s*(?:etb|birr)?\\s*[\\d,]+/i, "").replace(/\\b(live|active|open|upcoming|scheduled|ended|closed)\\b/gi, "").trim();
+        const query = submittedQ.toLowerCase().replace(/(?:under|below|less than|max(?:imum)?|up to)\s*(?:etb|birr)?\s*[\d,]+/i, "").replace(/\b(live|active|open|upcoming|scheduled|ended|closed)\b/gi, "").trim();
         if (!query) return true;
         const searchable = `${l.title} ${l.description} ${l.category} ${l.location}`.toLowerCase();
-        const terms = query.split(/\\s+/).filter((term) => term.length > 1 && !["in", "the", "for", "and", "with", "birr", "etb"].includes(term));
+        const terms = query.split(/\s+/).filter((term) => term.length > 1 && !["in", "the", "for", "and", "with", "birr", "etb"].includes(term));
         return terms.every((term) => searchable.includes(term));
       })
       .filter((l) => !cat || l.category === cat).filter((l) => !loc || l.location === loc)
