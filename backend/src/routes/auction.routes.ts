@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { UserRole } from "@prisma/client";
 import { authenticate, authorize } from "../middleware/authenticate.js";
-import { auditRequest } from "../middleware/audit-request.js";\nimport { requireActiveAccount } from "../middleware/require-active-account.js";
+import { auditRequest } from "../middleware/audit-request.js";
+import { requireActiveAccount } from "../middleware/require-active-account.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { bid, create, detail, list, myListings } from "../controllers/auction.controller.js";
 
