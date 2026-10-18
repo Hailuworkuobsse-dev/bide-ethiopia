@@ -1,12 +1,15 @@
-import electronics from "@/assets/electronics.jpg";
-import vehicle from "@/assets/vehicle.jpg";
-import coffee from "@/assets/coffee.jpg";
-import livestock from "@/assets/livestock.jpg";
 import type { Listing, User, Notification, Deposit, TokenTx, Category } from "./types";
 
+// Stable remote demo images; no missing local asset imports.
 export const CATEGORY_IMAGE: Record<Category, string> = {
-  Electronics: electronics, Vehicles: vehicle, Agriculture: coffee, Livestock: livestock,
-  "Coffee & Grain": coffee, "Home & Business": electronics, Property: vehicle, Wholesale: coffee,
+  Electronics: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=80",
+  Vehicles: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80",
+  Agriculture: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1200&q=80",
+  Livestock: "https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=1200&q=80",
+  "Coffee & Grain": "https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1200&q=80",
+  "Home & Business": "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=1200&q=80",
+  Property: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80",
+  Wholesale: "https://images.unsplash.com/photo-1604719312566-8912e9c8a213?auto=format&fit=crop&w=1200&q=80",
 };
 
 export const ME = "u-me";
