@@ -8,7 +8,6 @@ import { USERS } from "@/lib/seed";
 import { etb, fmtDate } from "@/lib/format";
 import { currentPrice } from "@/lib/bidding";
 import { api, type BackendAuditEvent } from "@/lib/api";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -53,7 +52,7 @@ export function Admin() {
 
   useEffect(() => {
     void checkHealth();
-    void fetchDbAudit();
+    if (s.authUser?.role === "ADMIN") void fetchDbAudit();
   }, [s.authUser]);
 
   const queue = s.listings.filter((l) => l.moderation !== "approved");
@@ -65,17 +64,21 @@ export function Admin() {
     ["Moderation Queue", queue.length],
   ];
 
-  const switchToAdmin = async () => {
-    try {
-      await s.login("+251911234567", "Password123!");
-      toast.success("Switched to Abebe Admin (ADMIN role)");
-      void fetchDbAudit();
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to switch to admin");
-    }
-  };
-
   const isAdmin = s.authUser?.role === "ADMIN";
+
+  if (!isAdmin) {
+    return (
+      <div className="card mx-auto max-w-xl space-y-3 p-8 text-center">
+        <Shield className="mx-auto size-10 text-primary" />
+        <h1 className="text-xl font-semibold">Administrator access required</h1>
+        <p className="text-sm text-muted-foreground">
+          Sign in with an authorized administrator account to access moderation, user administration, platform settings, and audit events.
+          Guest, buyer, and seller accounts cannot open this dashboard.
+        </p>
+        <a className="btn-primary inline-flex justify-center" href="/account">Go to sign in</a>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -85,11 +88,6 @@ export function Admin() {
           sub="Live management connected to Node.js / Express backend and MySQL (Port 3307)."
           icon={Shield}
         />
-        {!isAdmin && (
-          <button onClick={switchToAdmin} className="btn-gold min-h-10 text-sm">
-            Log in as Abebe Admin
-          </button>
-        )}
       </div>
 
       {/* KPI Cards */}
