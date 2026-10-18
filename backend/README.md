@@ -12,7 +12,7 @@ Node.js + TypeScript REST API using Express 5 and Prisma/MySQL. This is an initi
 2. `npm install`
 3. Copy `.env.example` to `.env` and set a unique `JWT_ACCESS_SECRET` and a valid MySQL `DATABASE_URL`.
 4. `npm run prisma:generate`
-5. `npm run prisma:migrate -- --name init`
+5. `npm run prisma:migrate:deploy`
 6. `npm run dev`
 
 API base: `http://localhost:4000/api/v1`; health: `/health`.
