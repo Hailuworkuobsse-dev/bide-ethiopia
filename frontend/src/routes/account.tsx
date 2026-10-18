@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { User, LogIn, UserPlus, LogOut, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useStore, useNow } from "@/lib/store";
@@ -23,6 +23,7 @@ const TABS = ["Watchlist", "Active bids", "Wins", "My listings", "Profile", "Swi
 
 export function Account() {
   const { listings, watchlist, tokens, reset, authUser, login, register, logout, backendConnected } = useStore();
+  const navigate = useNavigate();
   const now = useNow();
   const [tab, setTab] = useState<(typeof TABS)[number]>(authUser ? "Watchlist" : "Switch User");
   const [phoneInput, setPhoneInput] = useState(authUser?.phone ?? "+251912000111");
@@ -62,10 +63,21 @@ export function Account() {
       if (isRegistering) {
         if (!fullNameInput.trim()) throw new Error("Full name is required");
         await register({ fullName: fullNameInput, phone: phoneInput, password: passwordInput, role: registerRole });
-        toast.success(`Your ${registerRole.toLowerCase()} account was created. Verification may be required before bidding or selling.`);
+        setIsRegistering(false);
+        setPasswordInput("");
+        toast.success("Registration submitted. Check your phone for the confirmation SMS, then sign in.");
+        await navigate({ to: "/account", hash: "signin", replace: true });
       } else {
-        await login(phoneInput, passwordInput);
-        toast.success(`Welcome back, ${phoneInput}!`);
+        const user = await login(phoneInput, passwordInput);
+        toast.success(`Welcome back, ${user.fullName}!`);
+        if (user.role === "ADMIN") {
+          await navigate({ to: "/admin", replace: true });
+        } else if (user.role === "SELLER") {
+          await navigate({ to: "/sell", replace: true });
+        } else {
+          setTab("Watchlist");
+          await navigate({ to: "/account", replace: true });
+        }
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Authentication failed");
@@ -118,10 +130,10 @@ export function Account() {
           {/* Quick Account Switcher */}
           <div className="card space-y-4 p-5">
             <h2 className="text-lg font-semibold flex items-center gap-2">
-              <ShieldCheck className="size-5 text-primary" /> Test Database Accounts
+              <ShieldCheck className="size-5 text-primary" /> Sign in or create an account
             </h2>
             <p className="text-sm text-muted-foreground">
-              These pre-seeded accounts exist in your live MySQL database on port 3307:
+              Choose Sign In to access your role-specific dashboard, or switch to registration to create a Buyer or Seller account.
             </p>
             <div className="space-y-2">
               <button
@@ -169,7 +181,7 @@ export function Account() {
           <div className="card space-y-4 p-5">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               {isRegistering ? <UserPlus className="size-5 text-primary" /> : <LogIn className="size-5 text-primary" />}
-              {isRegistering ? "Register New Account" : "Sign In with Custom Phone"}
+              {isRegistering ? "Create your BidEthiopia account" : "Sign in to BidEthiopia"}
             </h2>
             <form onSubmit={handleAuthSubmit} className="space-y-3">
               {isRegistering && (
@@ -216,7 +228,7 @@ export function Account() {
                 />
               </div>
               <button type="submit" disabled={loading} className="btn-primary w-full">
-                {loading ? "Processing..." : isRegistering ? "Create Account in MySQL" : "Sign In"}
+                {loading ? "Processing..." : isRegistering ? "Sign Up" : "Sign In"}
               </button>
             </form>
             <div className="space-y-3 text-center pt-2">
@@ -225,17 +237,17 @@ export function Account() {
                 onClick={() => setIsRegistering(!isRegistering)}
                 className="text-xs text-primary underline"
               >
-                {isRegistering ? "Already registered? Sign in instead" : "Need an account? Register new user in MySQL"}
+                {isRegistering ? "Already registered? Sign in instead" : "New to BidEthiopia? Sign up"}
               </button>
-              <div>
+              {!authUser && <div>
                 <button
                   type="button"
-                  onClick={() => { logout(); setTab("Watchlist"); toast.info("Continuing as guest. You can browse public auctions without signing in."); }}
+                  onClick={() => { logout(); setTab("Watchlist"); void navigate({ to: "/", replace: true }); toast.info("Continuing as guest. You can browse public auctions without signing in."); }}
                   className="btn-outline w-full"
                 >
                   Continue as Guest
                 </button>
-              </div>
+              </div>}
             </div>
           </div>
         </div>
