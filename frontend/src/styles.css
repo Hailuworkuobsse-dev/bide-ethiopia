@@ -80,15 +80,15 @@
 @layer components {
   .card { @apply rounded-xl border bg-card text-card-foreground; box-shadow: var(--shadow-card); }
   .btn { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring; }
-  .btn-primary { @apply btn bg-primary text-primary-foreground hover:bg-primary/90; }
-  .btn-gold { @apply btn bg-gold text-gold-foreground hover:bg-gold/90; }
-  .btn-outline { @apply btn border bg-card text-foreground hover:bg-muted; }
-  .btn-ghost { @apply btn text-foreground hover:bg-muted; }
+  .btn-primary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-primary text-primary-foreground hover:bg-primary/90; }
+  .btn-gold { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-gold text-gold-foreground hover:bg-gold/90; }
+  .btn-outline { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring border bg-card text-foreground hover:bg-muted; }
+  .btn-ghost { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-foreground hover:bg-muted; }
   .input { @apply min-h-11 w-full rounded-lg border border-input bg-card px-3 text-base outline-none focus:ring-2 focus:ring-ring; }
   .label { @apply mb-1 block text-sm font-semibold; }
   .chip { @apply inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border bg-card px-4 text-sm font-medium transition-colors; }
   .chip-active { @apply border-primary bg-primary text-primary-foreground; }
   .badge { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold; }
-  .demo-tag { @apply badge bg-gold/25 text-accent-foreground uppercase tracking-wide; }
+  .demo-tag { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-gold/25 text-accent-foreground uppercase tracking-wide; }
   .hero-bg { background-image: var(--gradient-hero); }
 }

@@ -32,15 +32,15 @@ function Sell() {
   const publish = (e: React.FormEvent) => {
     e.preventDefault();
     const er: Record<string, string> = {};
-    if (f.title.trim().length < 5) er.title = "Title needs at least 5 characters.";
-    if (!(Number(f.price) > 0)) er.price = "Enter an opening price in Birr.";
-    if (!(Number(f.inc) > 0)) er.inc = "Enter a minimum increment.";
+    if (f.title.trim().length < 5) er["title"] = "Title needs at least 5 characters.";
+    if (!(Number(f.price) > 0)) er["price"] = "Enter an opening price in Birr.";
+    if (!(Number(f.inc) > 0)) er["inc"] = "Enter a minimum increment.";
     setErrs(er); if (Object.keys(er).length) return;
     const now = Date.now(); const id = `l-${uid()}`;
     addListing({ id, title: f.title, category: f.category, description: f.description, condition: "Used - good", specs: {}, location: f.location, images: [CATEGORY_IMAGE[f.category]], format: f.format,
       openingPrice: Number(f.price), minIncrement: Number(f.inc), dutchFloor: f.format === "dutch" ? Number(f.price) * 0.7 : undefined, dutchDropPerHour: f.format === "dutch" ? Number(f.inc) : undefined,
       startsAt: now, endsAt: now + Number(f.days) * 86_400_000, depositRequired: Number(f.deposit) || undefined, delivery: f.delivery, terms: f.terms, sellerId: ME, bids: [], moderation: "approved" });
-    toast.success("Listing published (demo)."); nav({ to: "/auction/$id", params: { id } });
+    toast.success("Listing published and synced to MySQL!"); nav({ to: "/auction/$id", params: { id } });
   };
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
 
@@ -61,7 +61,7 @@ function Sell() {
         </div>}
       </section>
       <form onSubmit={publish} className="card space-y-4 p-5" noValidate>
-        <div><label className="label">Title</label><input className="input" value={f.title} onChange={set("title")} />{errs.title && <p className="text-sm text-destructive">{errs.title}</p>}</div>
+        <div><label className="label">Title</label><input className="input" value={f.title} onChange={set("title")} />{errs["title"] && <p className="text-sm text-destructive">{errs["title"]}</p>}</div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">Category</label><select className="input" value={f.category} onChange={set("category")}>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></div>
           <div><label className="label">Location</label><select className="input" value={f.location} onChange={set("location")}>{LOCATIONS.map((c) => <option key={c}>{c}</option>)}</select></div>
@@ -70,8 +70,8 @@ function Sell() {
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">Auction type</label><select className="input" value={f.format} onChange={set("format")}><option value="english">English (price goes up)</option><option value="dutch">Dutch (price goes down)</option></select></div>
           <div><label className="label">Duration</label><select className="input" value={f.days} onChange={set("days")}>{["1", "3", "7", "14"].map((d) => <option key={d} value={d}>{d} day(s)</option>)}</select></div>
-          <div><label className="label">Opening price (ETB)</label><input className="input" inputMode="numeric" value={f.price} onChange={set("price")} />{errs.price && <p className="text-sm text-destructive">{errs.price}</p>}</div>
-          <div><label className="label">{f.format === "dutch" ? "Drop per hour (ETB)" : "Min increment (ETB)"}</label><input className="input" inputMode="numeric" value={f.inc} onChange={set("inc")} />{errs.inc && <p className="text-sm text-destructive">{errs.inc}</p>}</div>
+          <div><label className="label">Opening price (ETB)</label><input className="input" inputMode="numeric" value={f.price} onChange={set("price")} />{errs["price"] && <p className="text-sm text-destructive">{errs["price"]}</p>}</div>
+          <div><label className="label">{f.format === "dutch" ? "Drop per hour (ETB)" : "Min increment (ETB)"}</label><input className="input" inputMode="numeric" value={f.inc} onChange={set("inc")} />{errs["inc"] && <p className="text-sm text-destructive">{errs["inc"]}</p>}</div>
           <div><label className="label">Deposit (optional)</label><input className="input" inputMode="numeric" value={f.deposit} onChange={set("deposit")} /></div>
           <div><label className="label">Delivery</label><select className="input" value={f.delivery} onChange={set("delivery")}><option value="pickup">Pickup</option><option value="delivery">Delivery</option><option value="both">Both</option></select></div>
         </div>

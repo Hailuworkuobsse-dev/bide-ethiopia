@@ -11,6 +11,7 @@ async function synchronizeAuctionStatuses() {
   await prisma.auction.updateMany({ where: { status: AuctionStatus.LIVE, endsAt: { lte: now } }, data: { status: AuctionStatus.ENDED } });
 }
 export async function listAuctions(filters: ListFilters) {
+  await synchronizeAuctionStatuses();
   const now = new Date();
   const where: Prisma.AuctionWhereInput = {
     ...(filters.status ? { status: filters.status } : { status: { in: [AuctionStatus.LIVE, AuctionStatus.SCHEDULED] } }),
@@ -30,6 +31,7 @@ export async function listAuctions(filters: ListFilters) {
 }
 
 export async function getAuction(id: string) {
+  await synchronizeAuctionStatuses();
   const auction = await prisma.auction.findUnique({
     where: { id },
     include: {
@@ -45,13 +47,17 @@ export async function createAuction(sellerId: string, input: {
   title: string; description: string; category: string; condition?: string; region: string; city: string; imageUrls?: string[];
   type: "ASCENDING" | "DESCENDING"; startingPrice: number; minimumIncrement: number; reservePrice?: number; startsAt: Date; endsAt: Date;
 }, context: { ip?: string; userAgent?: string }) {
-  if (input.startsAt <= new Date()) throw new HttpError(400, "startsAt must be in the future", "INVALID_START_TIME");
+  const now = new Date();
+  if (input.endsAt <= now) throw new HttpError(400, "endsAt must be in the future", "INVALID_END_TIME");
+  const isLive = input.startsAt <= now;
   const auction = await prisma.auction.create({
     data: {
       sellerId, title: input.title, description: input.description, category: input.category,
       condition: input.condition, region: input.region, city: input.city,
       imageUrls: input.imageUrls as Prisma.InputJsonValue | undefined,
-      type: input.type as AuctionType, status: AuctionStatus.SCHEDULED, currency: "ETB",
+      type: input.type as AuctionType,
+      status: isLive ? AuctionStatus.LIVE : AuctionStatus.SCHEDULED,
+      currency: "ETB",
       startingPrice: new Prisma.Decimal(input.startingPrice), currentPrice: new Prisma.Decimal(input.startingPrice),
       minimumIncrement: new Prisma.Decimal(input.minimumIncrement),
       reservePrice: input.reservePrice === undefined ? undefined : new Prisma.Decimal(input.reservePrice),

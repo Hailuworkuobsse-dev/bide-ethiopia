@@ -1,49 +1,253 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { User } from "lucide-react";
+import { User, LogIn, UserPlus, LogOut, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useStore, useNow } from "@/lib/store";
 import { PageTitle } from "@/components/shell";
 import { ListingCard } from "@/components/listing-card";
-import { ME, USERS } from "@/lib/seed";
 import { normalizeEtPhone } from "@/lib/format";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/account")({
-  head: () => ({ meta: [
-    { title: "My account — BidEthiopia" }, { name: "description", content: "Watchlist, bids, wins, listings and verification." },
-    { property: "og:title", content: "BidEthiopia account" }, { property: "og:description", content: "Your buyer and seller dashboard." },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "My account — BidEthiopia" },
+      { name: "description", content: "Watchlist, bids, wins, listings and verification." },
+      { property: "og:title", content: "BidEthiopia account" },
+      { property: "og:description", content: "Your buyer and seller dashboard." },
+    ],
+  }),
   component: Account,
 });
 
-const TABS = ["Watchlist", "Active bids", "Wins", "My listings", "Profile"] as const;
+const TABS = ["Watchlist", "Active bids", "Wins", "My listings", "Profile", "Switch User"] as const;
 
-function Account() {
-  const { listings, watchlist, tokens, reset } = useStore();
+export function Account() {
+  const { listings, watchlist, tokens, reset, authUser, login, register, logout, backendConnected } = useStore();
   const now = useNow();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Watchlist");
-  const me = USERS.find((u) => u.id === ME)!;
-  const [phone, setPhone] = useState(me.phone);
+  const [phoneInput, setPhoneInput] = useState(authUser?.phone ?? "+251912000111");
+  const [passwordInput, setPasswordInput] = useState("Password123!");
+  const [fullNameInput, setFullNameInput] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const t = now ?? Date.now();
-  const lists = {
+  const currentUserId = authUser?.id ?? "u-me";
+
+  const lists: Record<string, typeof listings> = {
     Watchlist: listings.filter((l) => watchlist.includes(l.id)),
-    "Active bids": listings.filter((l) => l.endsAt > t && !l.soldTo && l.bids.some((b) => b.userId === ME)),
-    Wins: listings.filter((l) => l.soldTo === ME),
-    "My listings": listings.filter((l) => l.sellerId === ME),
+    "Active bids": listings.filter(
+      (l) => l.endsAt > t && !l.soldTo && l.bids.some((b) => b.userId === currentUserId || b.userName === authUser?.fullName),
+    ),
+    Wins: listings.filter((l) => l.soldTo === currentUserId),
+    "My listings": listings.filter((l) => l.sellerId === currentUserId),
   };
+
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      if (isRegistering) {
+        if (!fullNameInput.trim()) throw new Error("Full name is required");
+        await register({ fullName: fullNameInput, phone: phoneInput, password: passwordInput });
+        toast.success("Account created and registered with MySQL database!");
+      } else {
+        await login(phoneInput, passwordInput);
+        toast.success(`Welcome back, ${phoneInput}!`);
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Authentication failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const quickLogin = async (phone: string, role: string) => {
+    setLoading(true);
+    try {
+      await login(phone, "Password123!");
+      toast.success(`Switched account to ${role} (${phone})`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Quick login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const displayName = authUser?.fullName ?? "Selam Tesfaye";
+  const displayRole = authUser?.role ?? "BUYER";
+  const displayPhone = authUser?.phone ?? "+251 912 000 111";
+
   return (
     <div>
-      <PageTitle title={me.name} sub={`${me.city} · ${tokens} tokens · Verification: ${me.verification === "phone" ? "Phone verified (ID pending)" : me.verification}`} icon={User} />
-      <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4">{TABS.map((x) => <button key={x} onClick={() => setTab(x)} className={`chip ${tab === x ? "chip-active" : ""}`}>{x}</button>)}</div>
-      {tab === "Profile" ? (
-        <div className="card max-w-md space-y-3 p-5">
-          <label className="label" htmlFor="ph">Phone (+251)</label>
-          <input id="ph" className="input" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          <p className={`text-sm ${normalizeEtPhone(phone) ? "text-success" : "text-destructive"}`}>{normalizeEtPhone(phone) ?? "Enter a valid Ethiopian mobile number (9XXXXXXXX or 7XXXXXXXX)."}</p>
-          <p className="text-xs text-muted-foreground">SMS OTP verification is not connected in this demo.</p>
-          <button onClick={reset} className="btn-outline">Reset demo data</button>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <PageTitle
+          title={displayName}
+          sub={`${displayPhone} · Role: ${displayRole} · ${tokens} tokens · Database: ${backendConnected ? "MySQL Synced" : "Local Mode"}`}
+          icon={User}
+        />
+        {authUser && (
+          <button onClick={logout} className="btn-outline min-h-10 text-sm">
+            <LogOut className="size-4" /> Sign Out
+          </button>
+        )}
+      </div>
+
+      <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4">
+        {TABS.map((x) => (
+          <button key={x} onClick={() => setTab(x)} className={`chip ${tab === x ? "chip-active" : ""}`}>
+            {x}
+          </button>
+        ))}
+      </div>
+
+      {tab === "Switch User" ? (
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Quick Account Switcher */}
+          <div className="card space-y-4 p-5">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <ShieldCheck className="size-5 text-primary" /> Test Database Accounts
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              These pre-seeded accounts exist in your live MySQL database on port 3307:
+            </p>
+            <div className="space-y-2">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => quickLogin("+251912000111", "Buyer")}
+                className="w-full flex items-center justify-between rounded-lg border p-3 text-left hover:bg-muted transition"
+              >
+                <div>
+                  <p className="font-semibold text-sm">Selam Tesfaye (Buyer)</p>
+                  <p className="text-xs text-muted-foreground">+251 912 000 111</p>
+                </div>
+                <span className="badge bg-secondary">BUYER</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => quickLogin("+251917222333", "Seller")}
+                className="w-full flex items-center justify-between rounded-lg border p-3 text-left hover:bg-muted transition"
+              >
+                <div>
+                  <p className="font-semibold text-sm">Jimma Coffee Union (Seller)</p>
+                  <p className="text-xs text-muted-foreground">+251 917 222 333</p>
+                </div>
+                <span className="badge bg-primary text-primary-foreground">SELLER</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => quickLogin("+251911234567", "Admin")}
+                className="w-full flex items-center justify-between rounded-lg border p-3 text-left hover:bg-muted transition"
+              >
+                <div>
+                  <p className="font-semibold text-sm">Abebe Admin (Admin)</p>
+                  <p className="text-xs text-muted-foreground">+251 911 234 567</p>
+                </div>
+                <span className="badge bg-destructive text-destructive-foreground">ADMIN</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Custom Login / Register form */}
+          <div className="card space-y-4 p-5">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              {isRegistering ? <UserPlus className="size-5 text-primary" /> : <LogIn className="size-5 text-primary" />}
+              {isRegistering ? "Register New Account" : "Sign In with Custom Phone"}
+            </h2>
+            <form onSubmit={handleAuthSubmit} className="space-y-3">
+              {isRegistering && (
+                <div>
+                  <label className="label">Full Name</label>
+                  <input
+                    className="input"
+                    value={fullNameInput}
+                    onChange={(e) => setFullNameInput(e.target.value)}
+                    placeholder="e.g. Dawit Kebede"
+                    required
+                  />
+                </div>
+              )}
+              <div>
+                <label className="label">Phone Number (+251...)</label>
+                <input
+                  className="input"
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value)}
+                  placeholder="+251912345678"
+                  required
+                />
+              </div>
+              <div>
+                <label className="label">Password</label>
+                <input
+                  type="password"
+                  className="input"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="Min 10 characters"
+                  required
+                />
+              </div>
+              <button type="submit" disabled={loading} className="btn-primary w-full">
+                {loading ? "Processing..." : isRegistering ? "Create Account in MySQL" : "Sign In"}
+              </button>
+            </form>
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                onClick={() => setIsRegistering(!isRegistering)}
+                className="text-xs text-primary underline"
+              >
+                {isRegistering ? "Already registered? Sign in instead" : "Need an account? Register new user in MySQL"}
+              </button>
+            </div>
+          </div>
         </div>
-      ) : lists[tab].length === 0 ? <div className="card p-10 text-center text-muted-foreground">Nothing here yet.</div> : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{lists[tab].map((l) => <ListingCard key={l.id} l={l} now={now} />)}</div>
+      ) : tab === "Profile" ? (
+        <div className="card max-w-md space-y-4 p-5">
+          <div>
+            <span className="text-xs text-muted-foreground">Account Full Name</span>
+            <p className="font-semibold text-lg">{displayName}</p>
+          </div>
+          <div>
+            <span className="text-xs text-muted-foreground">Assigned Role</span>
+            <p>
+              <span className="badge bg-primary text-primary-foreground">{displayRole}</span>
+            </p>
+          </div>
+          <div>
+            <span className="text-xs text-muted-foreground">Phone Number</span>
+            <p className="font-mono text-sm">{displayPhone}</p>
+            <p className={`text-xs mt-1 ${normalizeEtPhone(displayPhone) ? "text-success" : "text-destructive"}`}>
+              {normalizeEtPhone(displayPhone) ? "Verified format (+251 standard mobile)" : "Invalid phone format"}
+            </p>
+          </div>
+          <div>
+            <span className="text-xs text-muted-foreground">Backend API Status</span>
+            <p className="flex items-center gap-1.5 text-sm font-medium">
+              <CheckCircle2 className={`size-4 ${backendConnected ? "text-emerald-500" : "text-amber-500"}`} />
+              {backendConnected ? "Connected to Backend REST API (port 3410)" : "Disconnected / Local Prototype"}
+            </p>
+          </div>
+          <div className="pt-2 border-t flex gap-2">
+            <button onClick={reset} className="btn-outline text-xs">
+              Reset Demo Cache
+            </button>
+          </div>
+        </div>
+      ) : (lists[tab]?.length ?? 0) === 0 ? (
+        <div className="card p-10 text-center text-muted-foreground">Nothing here yet.</div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {(lists[tab] ?? []).map((l) => (
+            <ListingCard key={l.id} l={l} now={now} />
+          ))}
+        </div>
       )}
     </div>
   );

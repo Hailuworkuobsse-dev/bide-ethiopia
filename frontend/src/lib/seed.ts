@@ -4,6 +4,8 @@ import coffee from "@/assets/coffee.jpg";
 import livestock from "@/assets/livestock.jpg";
 import type { Listing, User, Notification, Deposit, TokenTx, Category } from "./types";
 
+// Category default images
+
 export const CATEGORY_IMAGE: Record<Category, string> = {
   Electronics: electronics, Vehicles: vehicle, Agriculture: coffee, Livestock: livestock,
   "Coffee & Grain": coffee, "Home & Business": electronics, Property: vehicle, Wholesale: coffee,
@@ -28,7 +30,7 @@ function mk(now: number, i: number, p: Partial<Listing> & Pick<Listing, "title" 
   const startsAt = p.startsAt ?? now - 6 * H;
   const inc = p.minIncrement ?? Math.max(50, Math.round(p.openingPrice * 0.02 / 50) * 50);
   const bids = Array.from({ length: nBids }, (_, k) => ({
-    id: `${id}-b${k}`, listingId: id, userId: `u-b${k % 5}`, userName: bidders[k % 5],
+    id: `${id}-b${k}`, listingId: id, userId: `u-b${k % 5}`, userName: bidders[k % 5] ?? "Bidder",
     amount: p.openingPrice + inc * (k + 1) + (k > 2 ? inc : 0), at: startsAt + (k + 1) * 0.6 * H,
   })).reverse();
   return {

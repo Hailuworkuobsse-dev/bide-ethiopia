@@ -12,22 +12,32 @@ const LABELS: Record<Lang, Record<string, string>> = {
 export const LANG_NAMES: Record<Lang, string> = { en: "English", am: "አማርኛ Amharic", om: "Afaan Oromoo", ti: "ትግርኛ Tigrinya" };
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { lang, setLang, notifications, tokens, hydrated } = useStore();
+  const { lang, setLang, notifications, tokens, hydrated, backendConnected, authUser } = useStore();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const t = LABELS[lang];
+  const t = LABELS[lang] ?? LABELS.en;
   const unread = notifications.filter((n) => !n.read).length;
   const nav = [
-    { to: "/", label: t.home, icon: Home },
-    { to: "/sell", label: t.sell, icon: PlusCircle },
-    { to: "/notifications", label: t.alerts, icon: Bell, badge: unread },
-    { to: "/account", label: t.account, icon: User },
+    { to: "/", label: t["home"] ?? "Browse", icon: Home },
+    { to: "/sell", label: t["sell"] ?? "Sell", icon: PlusCircle },
+    { to: "/notifications", label: t["alerts"] ?? "Alerts", icon: Bell, badge: unread },
+    { to: "/account", label: t["account"] ?? "Account", icon: User },
   ] as const;
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
-      <div className="bg-gold/30 px-4 py-1.5 text-center text-xs font-semibold text-accent-foreground">
-        DEMO MODE — sample data. No real payments, deposits, escrow or SMS are connected.{" "}
-        <Link to="/integrations" className="underline">What's left for production</Link>
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-emerald-950/10 border-b px-4 py-1.5 text-xs font-semibold text-accent-foreground">
+        <div className="flex items-center gap-2">
+          <span className={`inline-block size-2.5 rounded-full ${backendConnected ? "bg-emerald-500 shadow-sm shadow-emerald-500/50" : "bg-amber-500 animate-pulse"}`} />
+          <span className="font-mono">{backendConnected ? "Live API: http://localhost:3410 (MySQL: 3307)" : "Connecting to API :3410..."}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {authUser ? (
+            <span className="text-primary font-medium">Signed in: <b>{authUser.fullName}</b> ({authUser.role})</span>
+          ) : (
+            <Link to="/account" className="underline text-primary">Login / Register</Link>
+          )}
+          <Link to="/integrations" className="hidden opacity-75 underline sm:inline">Docs</Link>
+        </div>
       </div>
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
@@ -36,7 +46,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="font-display text-xl font-semibold">Bid<span className="text-primary">Ethiopia</span></span>
           </Link>
           <nav className="ml-6 hidden items-center gap-1 md:flex">
-            {[...nav, { to: "/tokens", label: t.tokens, icon: Coins }, { to: "/admin", label: t.admin, icon: Shield }].map((n) => (
+            {[...nav, { to: "/tokens", label: t["tokens"] ?? "Tokens", icon: Coins }, { to: "/admin", label: t["admin"] ?? "Admin", icon: Shield }].map((n) => (
               <Link key={n.to} to={n.to} className={`btn-ghost relative ${path === n.to ? "bg-muted text-primary" : ""}`}>
                 <n.icon className="size-4" />{n.label}
                 {"badge" in n && n.badge ? <span className="badge absolute -right-1 -top-1 bg-destructive text-destructive-foreground">{n.badge}</span> : null}
@@ -65,7 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         © 2026 BidEthiopia prototype · Times shown in Africa/Addis_Ababa (EAT) · <Link to="/integrations" className="underline">Integration checklist</Link>
       </footer>
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t bg-card md:hidden">
-        {[...nav, { to: "/tokens", label: t.tokens, icon: Coins }].map((n) => (
+        {[...nav, { to: "/tokens", label: t["tokens"] ?? "Tokens", icon: Coins }].map((n) => (
           <Link key={n.to} to={n.to} className={`relative flex min-h-16 flex-col items-center justify-center gap-0.5 text-xs font-medium ${path === n.to ? "text-primary" : "text-muted-foreground"}`}>
             <n.icon className="size-6" />{n.label}
             {"badge" in n && n.badge ? <span className="badge absolute right-4 top-1.5 bg-destructive text-destructive-foreground">{n.badge}</span> : null}
