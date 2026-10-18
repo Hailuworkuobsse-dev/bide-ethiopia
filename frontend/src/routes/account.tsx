@@ -27,6 +27,7 @@ export function Account() {
   const now = useNow();
   const [tab, setTab] = useState<(typeof TABS)[number]>(authUser ? "Watchlist" : "Switch User");
   const [phoneInput, setPhoneInput] = useState(authUser?.phone ?? "+251912000111");
+  const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("Password123!");
   const [fullNameInput, setFullNameInput] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
