@@ -5,7 +5,7 @@ import { Sparkles, PlusCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { extractListing, type Extracted } from "@/lib/extract";
 import { CATEGORIES, LOCATIONS, type Category, type AuctionFormat } from "@/lib/types";
-import { CATEGORY_IMAGE, ME } from "@/lib/seed";
+import { CATEGORY_IMAGE } from "@/lib/seed";
 import { MicButton, PageTitle, ListenButton } from "@/components/shell";
 import { uid, etb } from "@/lib/format";
 
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/sell")({
 });
 
 function Sell() {
-  const { lang, addListing } = useStore();
+  const { lang, addListing, authUser } = useStore();
   const nav = useNavigate();
   const [text, setText] = useState("");
   const [ex, setEx] = useState<Extracted | null>(null);
@@ -39,10 +39,25 @@ function Sell() {
     const now = Date.now(); const id = `l-${uid()}`;
     addListing({ id, title: f.title, category: f.category, description: f.description, condition: "Used - good", specs: {}, location: f.location, images: [CATEGORY_IMAGE[f.category]], format: f.format,
       openingPrice: Number(f.price), minIncrement: Number(f.inc), dutchFloor: f.format === "dutch" ? Number(f.price) * 0.7 : undefined, dutchDropPerHour: f.format === "dutch" ? Number(f.inc) : undefined,
-      startsAt: now, endsAt: now + Number(f.days) * 86_400_000, depositRequired: Number(f.deposit) || undefined, delivery: f.delivery, terms: f.terms, sellerId: ME, bids: [], moderation: "approved" });
+      startsAt: now, endsAt: now + Number(f.days) * 86_400_000, depositRequired: Number(f.deposit) || undefined, delivery: f.delivery, terms: f.terms, sellerId: authUser!.id, bids: [], moderation: "approved" });
     toast.success("Listing published and synced to MySQL!"); nav({ to: "/auction/$id", params: { id } });
   };
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
+
+  if (!authUser) {
+    return <div className="card mx-auto max-w-xl space-y-3 p-8 text-center">
+      <h1 className="text-xl font-semibold">Sign in to sell on BidEthiopia</h1>
+      <p className="text-sm text-muted-foreground">Guests can browse public auctions. Create an account and choose Seller to publish listings.</p>
+      <a className="btn-primary inline-flex justify-center" href="/account">Sign in or register</a>
+    </div>;
+  }
+  if (authUser.role !== "SELLER" && authUser.role !== "ADMIN") {
+    return <div className="card mx-auto max-w-xl space-y-3 p-8 text-center">
+      <h1 className="text-xl font-semibold">Seller account required</h1>
+      <p className="text-sm text-muted-foreground">Your current role is {authUser.role}. Sign out and register a Seller account, or contact an administrator to change your role.</p>
+      <a className="btn-outline inline-flex justify-center" href="/account">Go to account</a>
+    </div>;
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
