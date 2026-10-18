@@ -78,8 +78,8 @@ export async function placeBid(auctionId: string, bidderId: string, amount: numb
     if (auction.type === AuctionType.ASCENDING && bidAmount.lt(minAllowed)) {
       throw new HttpError(400, `Bid must be at least ${minAllowed.toString()} ETB`, "BID_TOO_LOW");
     }
-    if (auction.type === AuctionType.DESCENDING && (bidAmount.gte(auction.currentPrice) || bidAmount.lte(0))) {
-      throw new HttpError(400, "For descending auctions, bid must be below the current price and above zero", "INVALID_DESCENDING_BID");
+    if (auction.type === AuctionType.DESCENDING && (bidAmount.gt(minAllowed) || bidAmount.lte(0))) {
+      throw new HttpError(400, `For descending auctions, bid must be at most ${minAllowed.toString()} ETB and above zero`, "INVALID_DESCENDING_BID");
     }
     await tx.bid.updateMany({ where: { auctionId, status: "WINNING" }, data: { status: "OUTBID" } });
     const bid = await tx.bid.create({ data: { auctionId, bidderId, amount: bidAmount, status: "WINNING" } });
