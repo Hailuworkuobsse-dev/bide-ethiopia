@@ -6,6 +6,33 @@ import { env } from "../config/env.js";
 import { HttpError } from "../utils/http-error.js";
 import { recordAudit } from "./audit.service.js";
 
+
+async function sendRegistrationConfirmationSms(phone: string, fullName: string): Promise<boolean> {
+  if (!env.SMS_API_URL || !env.SMS_API_TOKEN) {
+    console.warn("SMS gateway is not configured; registration confirmation SMS was skipped.");
+    return false;
+  }
+  try {
+    const response = await fetch(env.SMS_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + env.SMS_API_TOKEN },
+      body: JSON.stringify({
+        to: phone,
+        message: "Hello " + fullName + ", your BidEthiopia registration is complete. Your account is pending verification. You can now sign in.",
+        ...(env.SMS_SENDER_ID ? { senderId: env.SMS_SENDER_ID } : {}),
+      }),
+    });
+    if (!response.ok) {
+      console.error("SMS gateway returned HTTP " + response.status);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("Registration SMS request failed:", error instanceof Error ? error.message : "unknown error");
+    return false;
+  }
+}
+
 function issueAccessToken(user: { id: string; role: UserRole }) {
   return jwt.sign({ role: user.role, typ: "access" }, env.JWT_ACCESS_SECRET, {
     subject: user.id,
@@ -37,7 +64,8 @@ export async function registerUser(input: {
     select: { id: true, fullName: true, phone: true, email: true, role: true, status: true, preferredLanguage: true, createdAt: true },
   });
   await recordAudit({ actorId: user.id, action: "AUTH_REGISTER", entityType: "User", entityId: user.id, ipAddress: context.ip, userAgent: context.userAgent });
-  return { user, accessToken: issueAccessToken(user) };
+  const smsSent = await sendRegistrationConfirmationSms(user.phone, user.fullName);
+  return { user, accessToken: issueAccessToken(user), smsSent };
 }
 
 export async function loginUser(input: { phone: string; password: string }, context: { ip?: string; userAgent?: string }) {
