@@ -162,6 +162,7 @@ export const api = {
     password: string;
     email?: string;
     preferredLanguage?: string;
+    role?: "BUYER" | "SELLER";
   }): Promise<{ user: BackendUser; accessToken: string }> {
     const res = await request<{ data: { user: BackendUser; accessToken: string } }>("/auth/register", {
       method: "POST",
