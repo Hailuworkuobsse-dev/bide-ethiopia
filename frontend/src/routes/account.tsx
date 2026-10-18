@@ -24,11 +24,12 @@ const TABS = ["Watchlist", "Active bids", "Wins", "My listings", "Profile", "Swi
 export function Account() {
   const { listings, watchlist, tokens, reset, authUser, login, register, logout, backendConnected } = useStore();
   const now = useNow();
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Watchlist");
+  const [tab, setTab] = useState<(typeof TABS)[number]>(authUser ? "Watchlist" : "Switch User");
   const [phoneInput, setPhoneInput] = useState(authUser?.phone ?? "+251912000111");
   const [passwordInput, setPasswordInput] = useState("Password123!");
   const [fullNameInput, setFullNameInput] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
+  const [registerRole, setRegisterRole] = useState<"BUYER" | "SELLER">("BUYER");
   const [loading, setLoading] = useState(false);
 
   const t = now ?? Date.now();
@@ -49,8 +50,8 @@ export function Account() {
     try {
       if (isRegistering) {
         if (!fullNameInput.trim()) throw new Error("Full name is required");
-        await register({ fullName: fullNameInput, phone: phoneInput, password: passwordInput });
-        toast.success("Account created and registered with MySQL database!");
+        await register({ fullName: fullNameInput, phone: phoneInput, password: passwordInput, role: registerRole });
+        toast.success(`Your ${registerRole.toLowerCase()} account was created. Verification may be required before bidding or selling.`);
       } else {
         await login(phoneInput, passwordInput);
         toast.success(`Welcome back, ${phoneInput}!`);
@@ -74,9 +75,9 @@ export function Account() {
     }
   };
 
-  const displayName = authUser?.fullName ?? "Selam Tesfaye";
-  const displayRole = authUser?.role ?? "BUYER";
-  const displayPhone = authUser?.phone ?? "+251 912 000 111";
+  const displayName = authUser?.fullName ?? "Guest Visitor";
+  const displayRole = authUser?.role ?? "GUEST";
+  const displayPhone = authUser?.phone ?? "Public browsing — no account";
 
   return (
     <div>
@@ -161,16 +162,26 @@ export function Account() {
             </h2>
             <form onSubmit={handleAuthSubmit} className="space-y-3">
               {isRegistering && (
-                <div>
-                  <label className="label">Full Name</label>
-                  <input
-                    className="input"
-                    value={fullNameInput}
-                    onChange={(e) => setFullNameInput(e.target.value)}
-                    placeholder="e.g. Dawit Kebede"
-                    required
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="label">Full Name</label>
+                    <input
+                      className="input"
+                      value={fullNameInput}
+                      onChange={(e) => setFullNameInput(e.target.value)}
+                      placeholder="e.g. Dawit Kebede"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Account Type</label>
+                    <select className="input" value={registerRole} onChange={(e) => setRegisterRole(e.target.value as "BUYER" | "SELLER")}>
+                      <option value="BUYER">Buyer — browse and bid on auctions</option>
+                      <option value="SELLER">Seller — create and manage auction listings</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground mt-1">Admin access is assigned separately by an authorized administrator.</p>
+                  </div>
+                </>
               )}
               <div>
                 <label className="label">Phone Number (+251...)</label>
@@ -197,7 +208,7 @@ export function Account() {
                 {loading ? "Processing..." : isRegistering ? "Create Account in MySQL" : "Sign In"}
               </button>
             </form>
-            <div className="text-center pt-2">
+            <div className="space-y-3 text-center pt-2">
               <button
                 type="button"
                 onClick={() => setIsRegistering(!isRegistering)}
@@ -205,6 +216,15 @@ export function Account() {
               >
                 {isRegistering ? "Already registered? Sign in instead" : "Need an account? Register new user in MySQL"}
               </button>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => { logout(); setTab("Watchlist"); toast.info("Continuing as guest. You can browse public auctions without signing in."); }}
+                  className="btn-outline w-full"
+                >
+                  Continue as Guest
+                </button>
+              </div>
             </div>
           </div>
         </div>
