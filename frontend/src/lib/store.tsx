@@ -98,16 +98,7 @@ function useStoreValue() {
     return () => clearInterval(interval);
   }, [refreshAuctions]);
 
-  // Auto-login as default buyer if no token yet to ensure bids work smoothly out of the box
-  useEffect(() => {
-    if (!getStoredToken()) {
-      api.login("+251912000111", "Password123!")
-        .then((data) => setAuthUser(data.user))
-        .catch(() => {
-          // Fall back gracefully if backend is still starting
-        });
-    }
-  }, []);
+  // Visitors remain guests until they explicitly sign in or register.
 
   const login = useCallback(async (phone: string, pass: string) => {
     const res = await api.login(phone, pass);
@@ -115,7 +106,7 @@ function useStoreValue() {
     return res.user;
   }, []);
 
-  const register = useCallback(async (data: { fullName: string; phone: string; password: string; email?: string }) => {
+  const register = useCallback(async (data: { fullName: string; phone: string; password: string; email?: string; role?: "BUYER" | "SELLER" }) => {
     const res = await api.register(data);
     setAuthUser(res.user);
     return res.user;
