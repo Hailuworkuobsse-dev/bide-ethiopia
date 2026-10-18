@@ -13,7 +13,7 @@ async function sendRegistrationConfirmationWhatsApp(phone: string, fullName: str
   }
 
   // Meta expects the recipient number in international digits-only format, e.g. 2519XXXXXXXX.
-  const recipient = phone.replace(/\\D/g, "");
+  const recipient = phone.replace(/\D/g, "");
   if (!recipient) {
     console.warn("WhatsApp confirmation skipped because the recipient phone number is invalid.");
     return false;
