@@ -10,7 +10,7 @@ const schema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
   CORS_ORIGINS: z.string().default("http://localhost:5173"),
   BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(14).default(12),
-  SMS_API_URL: z.string().url().optional(),
+  SMS_API_URL: z.preprocess((value) => value === "" ? undefined : value, z.string().url().optional()),
   SMS_API_TOKEN: z.string().optional(),
   SMS_SENDER_ID: z.string().optional(),
 });
