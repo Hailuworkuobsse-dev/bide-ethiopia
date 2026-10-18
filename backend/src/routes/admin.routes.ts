@@ -7,6 +7,7 @@ import { auditEvents, updateAuctionStatus, updateUserRole, updateUserStatus } fr
 const router = Router();
 router.use(authenticate, authorize(UserRole.ADMIN));
 router.get("/audit-events", asyncHandler(auditEvents));
-router.patch("/users/:id/status", asyncHandler(updateUserStatus));\nrouter.patch("/users/:id/role", asyncHandler(updateUserRole));
+router.patch("/users/:id/status", asyncHandler(updateUserStatus));
+router.patch("/users/:id/role", asyncHandler(updateUserRole));
 router.patch("/auctions/:id/status", asyncHandler(updateAuctionStatus));
 export default router;
