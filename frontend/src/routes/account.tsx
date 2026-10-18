@@ -63,7 +63,7 @@ export function Account() {
     try {
       if (isRegistering) {
         if (!fullNameInput.trim()) throw new Error("Full name is required");
-        const registration = await register({ fullName: fullNameInput, phone: phoneInput, password: passwordInput, role: registerRole });
+        const registration = await register({ fullName: fullNameInput, phone: phoneInput, email: emailInput, password: passwordInput, role: registerRole });
         setIsRegistering(false);
         setPasswordInput("");
         if (registration.emailSent) {
