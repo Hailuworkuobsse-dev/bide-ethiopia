@@ -59,6 +59,14 @@ function Sell() {
     </div>;
   }
 
+  if (authUser.status !== "ACTIVE") {
+    return <div className="card mx-auto max-w-xl space-y-3 p-8 text-center">
+      <h1 className="text-xl font-semibold">Seller verification pending</h1>
+      <p className="text-sm text-muted-foreground">Your account must be activated by an administrator before you can publish listings. You can continue browsing auctions while you wait.</p>
+      <a className="btn-outline inline-flex justify-center" href="/">Browse auctions</a>
+    </div>;
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <PageTitle title="Sell an item" sub="Step 1: describe it. Step 2: check details. Step 3: publish." icon={PlusCircle} />
