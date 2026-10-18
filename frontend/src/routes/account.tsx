@@ -62,10 +62,14 @@ export function Account() {
     try {
       if (isRegistering) {
         if (!fullNameInput.trim()) throw new Error("Full name is required");
-        await register({ fullName: fullNameInput, phone: phoneInput, password: passwordInput, role: registerRole });
+        const registration = await register({ fullName: fullNameInput, phone: phoneInput, password: passwordInput, role: registerRole });
         setIsRegistering(false);
         setPasswordInput("");
-        toast.success("Registration submitted. Check your phone for the confirmation SMS, then sign in.");
+        if (registration.smsSent) {
+          toast.success("Registration completed. A confirmation SMS was sent to your phone. Please sign in.");
+        } else {
+          toast.warning("Your account was created, but the confirmation SMS could not be sent. Contact support or try again later.");
+        }
         await navigate({ to: "/account", hash: "signin", replace: true });
       } else {
         const user = await login(phoneInput, passwordInput);
