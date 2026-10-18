@@ -65,10 +65,10 @@ export function Account() {
         const registration = await register({ fullName: fullNameInput, phone: phoneInput, password: passwordInput, role: registerRole });
         setIsRegistering(false);
         setPasswordInput("");
-        if (registration.smsSent) {
-          toast.success("Registration completed. A confirmation SMS was sent to your phone. Please sign in.");
+        if (registration.emailSent) {
+          toast.success("Registration completed. A confirmation email was sent to your email address. Please sign in.");
         } else {
-          toast.warning("Your account was created, but the confirmation SMS could not be sent. Contact support or try again later.");
+          toast.warning("Your account was created, but the confirmation email could not be sent. Contact support or try again later.");
         }
         await navigate({ to: "/account", hash: "signin", replace: true });
       } else {
