@@ -172,7 +172,7 @@ export const api = {
     return res.data;
   },
 
-  async verifyEmail(token: string): Promise<{ verified: boolean }> {\n    const res = await request<{ data: { verified: boolean } }>("/auth/verify-email", { method: "POST", body: JSON.stringify({ token }) });\n    return res.data;\n  },\n\n  async me(): Promise<{ userId: string; role: string }> {
+  async me(): Promise<{ userId: string; role: string }> {
     const res = await request<{ data: { userId: string; role: string } }>("/auth/me");
     return res.data;
   },
