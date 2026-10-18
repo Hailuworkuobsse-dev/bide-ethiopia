@@ -122,6 +122,7 @@ function useStoreValue() {
   const placeBid = useCallback(
     (listingId: string, amount: number): { ok: boolean; reason?: string } => {
       if (!authUser) return { ok: false, reason: "Sign in or create a buyer account before bidding." };
+      if (authUser.status !== "ACTIVE") return { ok: false, reason: "Your account must be verified by an administrator before bidding." };
       const st = ref.current;
       const l = st.listings.find((x) => x.id === listingId);
       if (!l) return { ok: false, reason: "Listing not found." };
@@ -207,7 +208,7 @@ function useStoreValue() {
 
   const addListing = useCallback(
     (l: Listing) => {
-      if (!authUser || (authUser.role !== "SELLER" && authUser.role !== "ADMIN")) return;
+      if (!authUser || authUser.status !== "ACTIVE" || (authUser.role !== "SELLER" && authUser.role !== "ADMIN")) return;
       // Sync to MySQL Backend if connected
       if (backendConnected) {
         api.createAuction({
