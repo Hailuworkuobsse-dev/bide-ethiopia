@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { User, LogIn, UserPlus, LogOut, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useStore, useNow } from "@/lib/store";
 import { PageTitle } from "@/components/shell";
@@ -31,6 +31,17 @@ export function Account() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerRole, setRegisterRole] = useState<"BUYER" | "SELLER">("BUYER");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash === "#signup") {
+      setIsRegistering(true);
+      setTab("Switch User");
+    } else if (window.location.hash === "#signin") {
+      setIsRegistering(false);
+      setTab("Switch User");
+    }
+  }, []);
 
   const t = now ?? Date.now();
   const currentUserId = authUser?.id ?? "u-me";
